@@ -630,26 +630,20 @@
             line-height: 1.5;
         }
 
-        .task-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-            align-items: center;
-        }
-
         .note-button {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            margin-left: 12px;
             background: #F8FAFC;
             border: 1px solid #E2E8F0;
-            border-radius: 8px;
+            border-radius: 10px;
             color: #475569;
-            font-size: 13px;
-            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .note-button:hover {
@@ -657,9 +651,15 @@
             border-color: #CBD5E1;
         }
 
+        .note-button.has-note {
+            background: #FEF1F3;
+            border-color: #FBCFE8;
+            color: #BF3143;
+        }
+
         .note-button svg {
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
         }
     </style>
 </head>
@@ -1138,18 +1138,14 @@
                                 ${freqBadge}
                                 ${completionInfo}
                             </div>
-                            <div class="task-actions">
-                                <button class="note-button" onclick="openNoteModal(${task.id})">
-                                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2">
-                                        <path d="M4 4h16v16H4z" fill="none"/>
-                                        <path d="M8 4h8v4H8z" fill="none"/>
-                                        <path d="M6 10h12M6 14h7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                                    </svg>
-                                    ${task.completed_note ? 'Edit note' : 'Add note'}
-                                </button>
-                            </div>
                             ${noteHtml}
                         </div>
+                        <button class="note-button ${task.completed_note ? 'has-note' : ''}" onclick="openNoteModal(${task.id})" aria-label="${task.completed_note ? 'Edit note' : 'Add note'}">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" fill="none">
+                                <path d="M5 4h14a1 1 0 0 1 1 1v14l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M9 9h6M9 12h4" stroke-linecap="round"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             `;
