@@ -265,6 +265,8 @@
             transition: all 0.2s;
             position: relative;
             z-index: 10;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .assignment-pill:hover {
@@ -983,9 +985,9 @@
                         <div class="input-controls">
                             <!-- Assignment Pills -->
                             <div class="assignment-pills">
-                                <button class="assignment-pill active" data-assignment="anyone" onclick="setAssignment('anyone')">Anyone</button>
-                                <button class="assignment-pill" data-assignment="me" onclick="setAssignment('me')">Me</button>
-                                <button class="assignment-pill" data-assignment="partner" onclick="setAssignment('partner')">Partner</button>
+                                <button type="button" class="assignment-pill active" data-assignment="anyone" onclick="setAssignment('anyone')">Anyone</button>
+                                <button type="button" class="assignment-pill" data-assignment="me" onclick="setAssignment('me')">Me</button>
+                                <button type="button" class="assignment-pill" data-assignment="partner" onclick="setAssignment('partner')">Partner</button>
                             </div>
 
                             <!-- Priority Star -->
