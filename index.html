@@ -201,6 +201,7 @@
         .task-input-row {
             display: flex;
             gap: 8px;
+            margin-bottom: 8px;
         }
 
         .task-input {
@@ -229,6 +230,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .btn-add:hover {
@@ -238,30 +240,53 @@
         .task-options {
             display: flex;
             gap: 8px;
-            padding-top: 8px;
-            border-top: 1px solid #F1F5F9;
-            margin-top: 8px;
+            align-items: center;
+        }
+
+        .task-options .btn-add {
+            margin-left: auto;
         }
 
         .option-btn {
             padding: 6px 12px;
-            background: #F8FAFC;
-            border: 1px solid #E2E8F0;
-            border-radius: 6px;
+            background: transparent;
+            border: none;
+            border-radius: 20px;
             font-size: 13px;
-            color: #475569;
+            color: #94A3B8;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
+            padding-left: 32px;
         }
 
         .option-btn:hover {
-            background: #E2E8F0;
+            color: #64748B;
+        }
+
+        .option-btn::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #CBD5E1;
+            background: transparent;
+            transition: all 0.2s;
         }
 
         .option-btn.active {
-            background: #BF3143;
-            color: white;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .option-btn.active::before {
             border-color: #BF3143;
+            background: #BF3143;
+            box-shadow: inset 0 0 0 3px white;
         }
 
         /* ==================== TASK LIST ==================== */
@@ -519,7 +544,7 @@
 
         .btn-danger {
             background: #FEF2F2;
-            color: #DC2626;
+            color: #BF3143;
             border-color: #FECACA;
         }
 
@@ -648,6 +673,35 @@
             font-size: 13px;
             color: #475569;
             line-height: 1.5;
+            display: none;
+            position: relative;
+        }
+
+        .task-note.visible {
+            display: block;
+        }
+
+        .note-delete {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            background: transparent;
+            border: none;
+            color: #000;
+            font-size: 16px;
+            font-weight: 400;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .note-delete:hover {
+            color: #BF3143;
         }
 
         .note-button {
@@ -737,13 +791,13 @@
                 <div class="task-input-container">
                     <div class="task-input-row">
                         <input type="text" id="taskInput" class="task-input" placeholder="Add a task..." onkeypress="if(event.key==='Enter') addTask()">
-                        <button class="btn-add" onclick="addTask()">Add</button>
                     </div>
                     <div class="task-options">
                         <button class="option-btn active" data-frequency="once" onclick="setFrequency('once')">Once</button>
                         <button class="option-btn" data-frequency="daily" onclick="setFrequency('daily')">Daily</button>
                         <button class="option-btn" data-frequency="weekly" onclick="setFrequency('weekly')">Weekly</button>
                         <button class="option-btn" data-frequency="monthly" onclick="setFrequency('monthly')">Monthly</button>
+                        <button class="btn-add" onclick="addTask()">Add</button>
                     </div>
                 </div>
 
@@ -776,41 +830,80 @@
             <div class="container">
                 <div class="header">
                     <h1 class="header-title">Settings</h1>
+                    <p class="header-subtitle">Manage sync and preferences</p>
                 </div>
 
-                <div class="settings-section">
-                    <h3 class="settings-title">Your Space</h3>
-                    <div class="settings-item">
-                        <div class="settings-label">Partners</div>
-                        <div class="settings-value" id="partnerNames"></div>
+                <!-- Cross-Device Sync Card -->
+                <div style="margin-top: 16px; padding: 20px; background: white; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin: 0 0 8px 0;">
+                        <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; color: #BF3143;">
+                            <path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #333;">Cross-Device Sync</h3>
                     </div>
-                    <div class="settings-item">
-                        <div class="settings-label">You are</div>
-                        <div class="settings-value" id="currentUserName"></div>
+                    <p style="margin: 0 0 16px 0; font-size: 14px; color: #666; line-height: 1.5;">Use a sync code to access your data across devices and browsers.</p>
+
+                    <button class="btn-secondary" onclick="showSyncCodeCard()" style="width: 100%; margin-bottom: 12px;">Show My Sync Code</button>
+                    <div id="syncCodeCard" style="padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; margin-bottom: 12px; display: none; align-items: center; gap: 15px; min-height: 56px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div id="syncCodeDisplay" style="font-family: monospace; color: #111827; word-break: break-all; font-size: 15px; line-height: 1.4;"></div>
+                        </div>
+                        <button onclick="copySyncCode()" style="padding: 12px 20px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; background: #BF3143; color: #fff; cursor: pointer;">Copy</button>
+                    </div>
+
+                    <div style="padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; display: flex; align-items: center; gap: 15px; min-height: 56px; margin-top: 12px;">
+                        <input id="enterSyncCodeInput" type="text" placeholder="Enter sync code from another device" style="flex: 1; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; min-width: 0; background: white; outline: none;">
+                        <button onclick="submitSyncCode()" style="padding: 12px 20px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; background: #eef2f7; color: #5b6474; cursor: pointer;">Link</button>
                     </div>
                 </div>
 
-                <div class="settings-section">
-                    <h3 class="settings-title">Cross-Device Sync</h3>
-                    <div class="settings-item">
-                        <div class="settings-label">Sync Code</div>
-                        <div class="settings-value" id="syncCodeDisplay">Not connected</div>
+                <!-- User Info Card -->
+                <div style="margin-top: 16px; padding: 20px; background: white; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px;">
+                        <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; color: #BF3143;">
+                            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Your Space</span>
                     </div>
-                    <button class="btn-secondary" onclick="generateNewSyncCode()" style="width: 100%; margin-bottom: 8px;">Generate New Code</button>
-                    <button class="btn-secondary" onclick="promptEnterSyncCode()" style="width: 100%; margin-bottom: 8px;">Enter Existing Code</button>
-                    <button class="btn-secondary btn-danger" onclick="disconnectSync()" style="width: 100%;">Disconnect Sync</button>
+
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 13px; color: #64748B; margin-bottom: 4px;">Partners</div>
+                        <div id="partnerNames" style="font-size: 15px; font-weight: 500; color: #333;"></div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 13px; color: #64748B; margin-bottom: 4px;">You are</div>
+                        <div id="currentUserName" style="font-size: 15px; font-weight: 500; color: #333;"></div>
+                    </div>
+                    <button class="btn-secondary" onclick="switchUser()" style="width: 100%;">Switch User</button>
                 </div>
 
-                <div class="settings-section">
-                    <h3 class="settings-title">Data Management</h3>
-                    <button class="btn-secondary" onclick="exportData()" style="width: 100%; margin-bottom: 8px;">Export Data</button>
-                    <button class="btn-secondary" onclick="importData()" style="width: 100%;">Import Data</button>
-                </div>
+                <!-- Data Management Card -->
+                <div style="margin-top: 16px; padding: 20px; background: white; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px;">
+                        <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; color: #BF3143;">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Data Management</span>
+                    </div>
 
-                <div class="settings-section">
-                    <h3 class="settings-title">Actions</h3>
-                    <button class="btn-secondary" onclick="switchUser()" style="width: 100%; margin-bottom: 12px;">Switch User</button>
-                    <button class="btn-secondary btn-danger" onclick="resetApp()" style="width: 100%;">Reset Everything</button>
+                    <div style="margin-bottom: 16px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 8px;">Export / Import</div>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: #64748b; line-height: 1.4;">Backup or restore your data.</p>
+                        <button class="btn-secondary" onclick="exportData()" style="width: 100%; margin-bottom: 8px; background: #ffffff; color: #475569; border: 1px solid #cbd5e1;">Export Data</button>
+                        <button class="btn-secondary" onclick="importData()" style="width: 100%; background: #ffffff; color: #475569; border: 1px solid #cbd5e1;">Import Data</button>
+                    </div>
+
+                    <div style="margin-bottom: 16px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 8px;">Disconnect from Sync</div>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: #64748b; line-height: 1.4;">Stop syncing with other devices.</p>
+                        <button class="btn-secondary" onclick="disconnectSync()" style="width: 100%; background: #ffffff; color: #475569; border: 1px solid #cbd5e1;">Disconnect Sync</button>
+                    </div>
+
+                    <div style="padding: 16px; background: #FFF6F6; border-radius: 12px; border: 1px solid #F2D6D6;">
+                        <div style="font-size: 14px; font-weight: 600; color: #B94A48; margin-bottom: 8px;">Reset Everything</div>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: #A56A6A; line-height: 1.4;">Permanently delete all data from this device.</p>
+                        <button class="btn-secondary btn-danger" onclick="resetApp()" style="width: 100%;">Reset Everything</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1007,14 +1100,48 @@
             const code = getSyncCode();
             const syncDisplay = document.getElementById('syncCodeDisplay');
             if (syncDisplay) {
-                syncDisplay.textContent = code || 'Not connected';
+                syncDisplay.textContent = code || 'No sync code';
             }
         }
 
-        function promptEnterSyncCode() {
-            const code = prompt('Enter sync code from another device:');
+        function showSyncCodeCard() {
+            const syncCodeCard = document.getElementById('syncCodeCard');
+            const code = getSyncCode();
+
+            if (!code) {
+                // Generate new code if none exists
+                const newCode = generateSyncCode();
+                setSyncCodeValue(newCode);
+            }
+
+            const updatedCode = getSyncCode();
+            document.getElementById('syncCodeDisplay').textContent = updatedCode || '';
+
+            if (syncCodeCard.style.display === 'none' || !syncCodeCard.style.display) {
+                syncCodeCard.style.display = 'flex';
+            } else {
+                syncCodeCard.style.display = 'none';
+            }
+        }
+
+        function copySyncCode() {
+            const code = getSyncCode();
+            if (code) {
+                navigator.clipboard.writeText(code).then(() => {
+                    alert('Sync code copied to clipboard!');
+                });
+            }
+        }
+
+        function submitSyncCode() {
+            const input = document.getElementById('enterSyncCodeInput');
+            const code = input.value.trim();
             if (code) {
                 setSyncCodeValue(code);
+                input.value = '';
+                alert('Sync code linked successfully!');
+            } else {
+                alert('Please enter a sync code');
             }
         }
 
@@ -1071,7 +1198,28 @@
             renderTasks();
         }
 
-        function openNoteModal(taskId) {
+        function toggleNoteDisplay(taskId, event) {
+            event.stopPropagation();
+            const noteElement = document.getElementById(`note-${taskId}`);
+            if (noteElement) {
+                noteElement.classList.toggle('visible');
+            }
+        }
+
+        function deleteNote(taskId, event) {
+            event.stopPropagation();
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            if (confirm('Delete this note?')) {
+                task.completed_note = null;
+                saveState();
+                renderTasks();
+            }
+        }
+
+        function openNoteModal(taskId, event) {
+            event.stopPropagation();
             const task = state.tasks.find(t => t.id === taskId);
             if (!task) return;
 
@@ -1145,7 +1293,10 @@
                 : '';
 
             const noteHtml = task.completed_note
-                ? `<div class="task-note">${task.completed_note}</div>`
+                ? `<div class="task-note" id="note-${task.id}">
+                    <button class="note-delete" onclick="deleteNote(${task.id}, event)" aria-label="Delete note">&times;</button>
+                    ${task.completed_note}
+                </div>`
                 : '';
 
             return `
@@ -1160,7 +1311,7 @@
                             </div>
                             ${noteHtml}
                         </div>
-                        <button class="note-button ${task.completed_note ? 'has-note' : ''}" onclick="openNoteModal(${task.id})" aria-label="${task.completed_note ? 'Edit note' : 'Add note'}">
+                        <button class="note-button ${task.completed_note ? 'has-note' : ''}" onclick="${task.completed_note ? `toggleNoteDisplay(${task.id}, event)` : `openNoteModal(${task.id}, event)`}" aria-label="${task.completed_note ? 'View note' : 'Add note'}">
                             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" fill="none">
                                 <path d="M5 4h14a1 1 0 0 1 1 1v14l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M9 9h6M9 12h4" stroke-linecap="round"/>
