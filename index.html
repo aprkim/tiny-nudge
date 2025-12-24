@@ -532,6 +532,7 @@
         .task-badge.daily { background: #FEF2F2; color: #BF3143; }
         .task-badge.weekly { background: #F7F5FA; color: #6E6282; }
         .task-badge.monthly { background: #F4F7F4; color: #5C6D5F; }
+        .task-badge.assignment { background: #E2E8F0; color: #475569; }
 
         .completion-info {
             font-size: 12px;
@@ -974,7 +975,7 @@
             <div class="container">
                 <a href="https://tinywins.space" class="suite-back-link">← TinyWins</a>
                 <div class="header">
-                    <h1 class="header-title">Today</h1>
+                    <h1 class="header-title">Now</h1>
                     <p class="header-subtitle" id="todayDate"></p>
                 </div>
 
@@ -1034,7 +1035,7 @@
             <div class="container">
                 <a href="https://tinywins.space" class="suite-back-link">← TinyWins</a>
                 <div class="header">
-                    <h1 class="header-title">Future</h1>
+                    <h1 class="header-title">Later</h1>
                     <p class="header-subtitle">Long-term tasks and plans</p>
                 </div>
 
@@ -1057,7 +1058,7 @@
         <div id="view-all" class="view">
             <div class="container">
                 <div class="header">
-                    <h1 class="header-title">All Tasks</h1>
+                    <h1 class="header-title">History</h1>
                     <p class="header-subtitle">Everything you're tracking</p>
                 </div>
 
@@ -1159,7 +1160,7 @@
                         <line x1="3" y1="10" x2="21" y2="10"/>
                     </svg>
                 </div>
-                <div class="nav-tab-label">Today</div>
+                <div class="nav-tab-label">Now</div>
             </button>
             <button class="nav-tab" onclick="showView('future')">
                 <div class="nav-tab-icon">
@@ -1168,7 +1169,7 @@
                         <polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
-                <div class="nav-tab-label">Future</div>
+                <div class="nav-tab-label">Later</div>
             </button>
             <button class="nav-tab" onclick="showView('all')">
                 <div class="nav-tab-icon">
@@ -1179,7 +1180,7 @@
                         <line x1="4" y1="21" x2="20" y2="21" stroke-linecap="round"/>
                     </svg>
                 </div>
-                <div class="nav-tab-label">All Tasks</div>
+                <div class="nav-tab-label">History</div>
             </button>
             <button class="nav-tab" onclick="showView('settings')">
                 <div class="nav-tab-icon">
@@ -1255,6 +1256,8 @@
             if (savedSpace) state.space = JSON.parse(savedSpace);
             if (savedUser) state.currentUser = JSON.parse(savedUser);
             if (savedTasks) state.tasks = JSON.parse(savedTasks);
+
+            normalizeTaskAssignments();
         }
 
         function saveState() {
@@ -1328,6 +1331,7 @@
             document.getElementById('userPicker').style.display = 'none';
             document.getElementById('app').classList.add('active');
 
+            updateAssignmentPills();
             updateTodayDate();
             renderTasks();
             updateSettings();
@@ -1412,6 +1416,79 @@
         let newTaskPriority = false;
         let newTaskDueDate = null;
 
+        function getPartnerUser(currentUserId) {
+            if (!state.space || !state.space.members) return null;
+            return state.space.members.find(member => member.id !== currentUserId) || null;
+        }
+
+        function updateAssignmentPills() {
+            const meBtn = document.querySelector('.assignment-pill[data-assignment="me"]');
+            const partnerBtn = document.querySelector('.assignment-pill[data-assignment="partner"]');
+
+            if (meBtn && state.currentUser) {
+                meBtn.textContent = state.currentUser.name || 'Me';
+            }
+
+            if (partnerBtn && state.space) {
+                const partner = getPartnerUser(state.currentUser?.id);
+                partnerBtn.textContent = partner ? partner.name : 'Partner';
+            }
+        }
+
+        function resolveAssigneeId(selection) {
+            if (selection === 'anyone') return null;
+            if (!state.currentUser || !state.space) return null;
+            if (selection === 'me') return state.currentUser.id;
+
+            if (selection === 'partner') {
+                const partner = getPartnerUser(state.currentUser.id);
+                return partner ? partner.id : null;
+            }
+
+            return selection || null;
+        }
+
+        function resolveLegacyAssignee(task) {
+            if (!task.assignment || !state.space) return null;
+            if (task.assignment === 'anyone') return null;
+
+            if (task.assignment === 'me') {
+                const creator = state.space.members.find(member => member.name === task.created_by);
+                return creator ? creator.id : (state.currentUser ? state.currentUser.id : null);
+            }
+
+            if (task.assignment === 'partner') {
+                const creator = state.space.members.find(member => member.name === task.created_by);
+                if (!creator) return null;
+                const partner = state.space.members.find(member => member.id !== creator.id);
+                return partner ? partner.id : null;
+            }
+
+            return task.assignment;
+        }
+
+        function normalizeTaskAssignments() {
+            if (!state.space || !Array.isArray(state.tasks)) return;
+
+            state.tasks.forEach(task => {
+                if (task.assigned_to !== undefined) return;
+                const legacyAssignee = resolveLegacyAssignee(task);
+                task.assigned_to = legacyAssignee || null;
+            });
+        }
+
+        function getAssigneeLabel(task) {
+            if (!state.space) return '';
+
+            const assigneeId = task.assigned_to || resolveLegacyAssignee(task);
+            if (!assigneeId) return 'Anyone';
+
+            const member = state.space.members.find(m => m.id === assigneeId);
+            if (!member) return 'Anyone';
+
+            return state.currentUser && assigneeId === state.currentUser.id ? 'You' : member.name;
+        }
+
         function setAssignment(assignment) {
             newTaskAssignment = assignment;
             document.querySelectorAll('.assignment-pill').forEach(pill => {
@@ -1448,10 +1525,12 @@
 
             if (!text) return;
 
+            const assignedTo = resolveAssigneeId(newTaskAssignment);
             const task = {
                 id: Date.now(),
                 text: text,
                 assignment: newTaskAssignment,
+                assigned_to: assignedTo,
                 priority: newTaskPriority,
                 due_date: newTaskDueDate,
                 completed: false,
@@ -1660,6 +1739,11 @@
                 ? `<span class="task-badge ${task.frequency}">${task.frequency}</span>`
                 : '';
 
+            const assigneeLabel = getAssigneeLabel(task);
+            const assigneeBadge = assigneeLabel
+                ? `<span class="task-badge assignment">${assigneeLabel}</span>`
+                : '';
+
             // Auto-detect category based on task text
             const isBuy = task.text.toLowerCase().includes('buy');
             const categoryClass = isBuy ? 'buy' : 'do';
@@ -1688,6 +1772,7 @@
                         <div class="task-content">
                             <div class="task-text ${task.completed ? 'completed' : ''}">${task.text}</div>
                             <div class="task-meta">
+                                ${assigneeBadge}
                                 ${freqBadge}
                                 ${completionInfo}
                             </div>
@@ -1906,16 +1991,19 @@
 
         // Listen for remote changes
         unsubscribe = userDoc.onSnapshot((doc) => {
-          if (doc.exists) {
-            const remoteData = doc.data();
+            if (doc.exists) {
+                const remoteData = doc.data();
 
-            // Apply remote data
-            if (remoteData.space) state.space = remoteData.space;
-            if (remoteData.tasks) state.tasks = remoteData.tasks;
+                // Apply remote data
+                if (remoteData.space) state.space = remoteData.space;
+                if (remoteData.tasks) state.tasks = remoteData.tasks;
 
-            // Refresh view
-            renderTasks();
-            renderAllTasks();
+                normalizeTaskAssignments();
+                updateAssignmentPills();
+
+                // Refresh view
+                renderTasks();
+                renderAllTasks();
 
             console.log(isFirstLoad ? '✅ Loaded from Firestore' : '✅ Synced from another device');
           } else if (!doc.exists && isFirstLoad) {
@@ -2006,7 +2094,9 @@
                 state.currentUser = data.currentUser;
                 state.tasks = data.tasks;
 
+                normalizeTaskAssignments();
                 saveState();
+                updateAssignmentPills();
                 updateSettings();
                 renderTasks();
                 renderAllTasks();
