@@ -326,10 +326,19 @@
             margin-bottom: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
             transition: all 0.2s;
+            border-left: 4px solid transparent;
         }
 
         .task-card:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .task-card.buy {
+            border-left-color: #16A34A;
+        }
+
+        .task-card.do {
+            border-left-color: #3B82F6;
         }
 
         .task-main {
@@ -405,8 +414,6 @@
         .task-badge.daily { background: #FEF3C7; color: #92400E; }
         .task-badge.weekly { background: #DBEAFE; color: #1E40AF; }
         .task-badge.monthly { background: #E0E7FF; color: #4338CA; }
-        .task-badge.buy { background: #DCFCE7; color: #166534; }
-        .task-badge.do { background: #E0E7FF; color: #4338CA; }
 
         .completion-info {
             font-size: 12px;
@@ -1313,9 +1320,7 @@
 
             // Auto-detect category based on task text
             const isBuy = task.text.toLowerCase().includes('buy');
-            const categoryBadge = isBuy
-                ? `<span class="task-badge buy">buy</span>`
-                : `<span class="task-badge do">do</span>`;
+            const categoryClass = isBuy ? 'buy' : 'do';
 
             const noteHtml = task.completed_note
                 ? `<div class="task-note" id="note-${task.id}">
@@ -1325,13 +1330,12 @@
                 : '';
 
             return `
-                <div class="task-card">
+                <div class="task-card ${categoryClass}">
                     <div class="task-main">
                         <div class="task-checkbox ${task.completed ? 'checked' : ''}" onclick="toggleTask(${task.id})"></div>
                         <div class="task-content">
                             <div class="task-text ${task.completed ? 'completed' : ''}">${task.text}</div>
                             <div class="task-meta">
-                                ${categoryBadge}
                                 ${freqBadge}
                                 ${completionInfo}
                             </div>
