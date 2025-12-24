@@ -319,6 +319,22 @@
             margin-bottom: 12px;
         }
 
+        .clear-btn {
+            padding: 6px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748B;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            color: #BF3143;
+        }
+
         .task-card {
             background: white;
             border-radius: 12px;
@@ -835,7 +851,7 @@
                 <div id="completedTasksSection" class="task-section" style="display: none;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
                         <h2 class="section-title" style="margin-bottom: 0;">Done</h2>
-                        <button onclick="clearCompleted()" style="padding: 6px 12px; background: transparent; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 12px; font-weight: 600; color: #64748B; cursor: pointer; transition: all 0.2s;">Clear</button>
+                        <button onclick="clearCompleted()" class="clear-btn">Clear</button>
                     </div>
                     <div id="completedTasks"></div>
                 </div>
