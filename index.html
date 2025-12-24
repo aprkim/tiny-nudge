@@ -405,6 +405,8 @@
         .task-badge.daily { background: #FEF3C7; color: #92400E; }
         .task-badge.weekly { background: #DBEAFE; color: #1E40AF; }
         .task-badge.monthly { background: #E0E7FF; color: #4338CA; }
+        .task-badge.buy { background: #DCFCE7; color: #166534; }
+        .task-badge.do { background: #E0E7FF; color: #4338CA; }
 
         .completion-info {
             font-size: 12px;
@@ -1309,6 +1311,12 @@
                 ? `<span class="task-badge ${task.frequency}">${task.frequency}</span>`
                 : '';
 
+            // Auto-detect category based on task text
+            const isBuy = task.text.toLowerCase().includes('buy');
+            const categoryBadge = isBuy
+                ? `<span class="task-badge buy">buy</span>`
+                : `<span class="task-badge do">do</span>`;
+
             const noteHtml = task.completed_note
                 ? `<div class="task-note" id="note-${task.id}">
                     <button class="note-delete" onclick="deleteNote(${task.id}, event)" aria-label="Delete note">&times;</button>
@@ -1323,6 +1331,7 @@
                         <div class="task-content">
                             <div class="task-text ${task.completed ? 'completed' : ''}">${task.text}</div>
                             <div class="task-meta">
+                                ${categoryBadge}
                                 ${freqBadge}
                                 ${completionInfo}
                             </div>
