@@ -1459,9 +1459,8 @@
                             </svg>
                         </button>
                         <button class="note-button ${task.completed_note ? 'has-note' : ''}" onclick="${task.completed_note ? `toggleNoteDisplay(${task.id}, event)` : `openNoteModal(${task.id}, event)`}" aria-label="${task.completed_note ? 'View note' : 'Add note'}">
-                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" fill="none">
-                                <path d="M5 4h14a1 1 0 0 1 1 1v14l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M9 9h6M9 12h4" stroke-linecap="round"/>
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                                <path d="M3 3h14c1.1 0 2 .9 2 2v10l-6 6H3c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2zm14 2H3v14h10v-6h4V5z"/>
                             </svg>
                         </button>
                     </div>
