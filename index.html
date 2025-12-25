@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2025-12-25-v3-cache-bust -->
+    <!-- Build: 2025-12-25-v4-share-feature -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -43,16 +43,17 @@
         .onboarding {
             min-height: 100vh;
             background: #F7FAFC;
-            padding: 24px 20px;
+            padding: 16px 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            padding-top: 32px;
         }
 
         .onboarding-header {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .onboarding-logo {
@@ -1299,7 +1300,19 @@
                     </div>
                     <p style="margin: 0 0 16px 0; font-size: 14px; color: #64748b; line-height: 1.5;">Use a sync code to access your data across devices and browsers.</p>
 
-                    <button class="btn-secondary" onclick="showSyncCodeCard()" style="width: 100%; margin-bottom: 12px;">Show My Sync Code</button>
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <button class="btn-secondary" onclick="showSyncCodeCard()" style="flex: 1;">Show My Sync Code</button>
+                        <button class="btn-secondary" onclick="shareSyncCode()" style="flex: 1;">
+                            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            </svg>
+                            Share
+                        </button>
+                    </div>
                     <div id="syncCodeCard" style="padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; margin-bottom: 12px; display: none; align-items: center; gap: 15px; min-height: 56px;">
                         <div style="flex: 1; min-width: 0;">
                             <div id="syncCodeDisplay" style="font-family: monospace; color: #111827; word-break: break-all; font-size: 15px; line-height: 1.4;"></div>
@@ -1446,6 +1459,19 @@
         // ==================== INIT ====================
         function init() {
             loadState();
+
+            // Check for sync code in URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const syncCodeFromUrl = urlParams.get('sync');
+
+            if (syncCodeFromUrl && !state.space) {
+                // User clicked a share link - show sync input with code pre-filled
+                document.getElementById('onboardingSyncCodeInput').value = syncCodeFromUrl;
+                showOnboardingSyncInput();
+                // Clear URL parameter
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+            }
 
             if (!state.space) {
                 showOnboarding();
@@ -1750,6 +1776,47 @@
             if (success) {
                 setCopyButtonsState('Copied', '#333', '#eef2f7', 'none');
                 setTimeout(() => setCopyButtonsState('Copy', '#fff', '#BF3143', 'none'), 1200);
+            }
+        }
+
+        async function shareSyncCode() {
+            const code = localStorage.getItem('tinyNudge_syncCode');
+            if (!code) {
+                showAlert('No sync code found. Please create your space first.');
+                return;
+            }
+
+            // Use production domain instead of window.location.origin for share links
+            const domain = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'https://nudge.tinywins.space'
+                : window.location.origin;
+            const shareUrl = `${domain}/?sync=${code}`;
+            const shareText = `Join my Tiny Nudge space! Use this link to sync our tasks: ${shareUrl}`;
+
+            // Try native share API first (works on mobile)
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Join my Tiny Nudge space',
+                        text: shareText,
+                        url: shareUrl
+                    });
+                    return;
+                } catch (err) {
+                    // User cancelled or share failed
+                    if (err.name !== 'AbortError') {
+                        console.log('Share failed:', err);
+                    }
+                }
+            }
+
+            // Fallback: copy URL to clipboard
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                showAlert('Link copied to clipboard! Share it with your partner.');
+            } catch (e) {
+                // Final fallback: show the URL in an alert
+                showAlert(`Share this link with your partner:\n\n${shareUrl}`);
             }
         }
 
