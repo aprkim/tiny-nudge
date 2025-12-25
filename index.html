@@ -1434,7 +1434,7 @@
             const partner2 = document.getElementById('partner2').value.trim();
 
             if (!partner1 || !partner2) {
-                alert('Please enter both names');
+                showAlert('Please enter both names');
                 return;
             }
 
@@ -1501,7 +1501,7 @@
             const code = input.value.trim().toLowerCase();
 
             if (!code) {
-                alert('Please enter a sync code');
+                showAlert('Please enter a sync code');
                 return;
             }
 
@@ -1515,7 +1515,7 @@
                     if (state.space && state.space.members && state.space.members.length > 0) {
                         showUserPicker();
                     } else {
-                        alert('No data found for this sync code. Please check the code and try again.');
+                        showAlert('No data found for this sync code. Please check the code and try again.');
                         backToOnboarding();
                     }
                 }, 3000);
@@ -1584,7 +1584,7 @@
             const partnerName = input.value.trim();
 
             if (!partnerName) {
-                alert('Please enter your partner\'s name');
+                showAlert('Please enter your partner\'s name');
                 return;
             }
 
@@ -1617,7 +1617,7 @@
             const newName = input.value.trim();
 
             if (!newName) {
-                alert('Please enter your name');
+                showAlert('Please enter your name');
                 return;
             }
 
@@ -2128,18 +2128,41 @@
             );
         }
 
+        function showAlert(message) {
+            document.getElementById('confirmTitle').textContent = message;
+            document.getElementById('confirmSubtitle').textContent = '';
+
+            const btn = document.getElementById('confirmBtn');
+            btn.textContent = 'OK';
+            btn.onclick = () => {
+                closeConfirmModal();
+            };
+
+            // Hide cancel button for alerts
+            const modal = document.getElementById('confirmModal');
+            const cancelBtn = modal.querySelector('.modal-btn-secondary');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+
+            modal.classList.add('active');
+        }
+
         function showConfirm(title, subtitle, onConfirm, confirmText = 'Confirm') {
             document.getElementById('confirmTitle').textContent = title;
             document.getElementById('confirmSubtitle').textContent = subtitle;
-            
+
             const btn = document.getElementById('confirmBtn');
             btn.textContent = confirmText;
             btn.onclick = () => {
                 onConfirm();
                 closeConfirmModal();
             };
-            
-            document.getElementById('confirmModal').classList.add('active');
+
+            // Show cancel button for confirms
+            const modal = document.getElementById('confirmModal');
+            const cancelBtn = modal.querySelector('.modal-btn-secondary');
+            if (cancelBtn) cancelBtn.style.display = '';
+
+            modal.classList.add('active');
         }
 
         function closeConfirmModal() {
@@ -2460,7 +2483,7 @@
       // Set sync code
       function setSyncCodeValue(code) {
         if (!code || code.trim().length === 0) {
-          alert('Please enter a valid sync code');
+          showAlert('Please enter a valid sync code');
           return false;
         }
         localStorage.setItem('tinyNudge_syncCode', code.trim().toLowerCase());
@@ -2626,7 +2649,7 @@
               const data = JSON.parse(event.target.result);
 
               if (!data.space || !data.tasks) {
-                alert('Invalid backup file');
+                showAlert('Invalid backup file');
                 return;
               }
 
@@ -2645,13 +2668,13 @@
                     renderTasks();
                     renderAllTasks();
 
-                    alert('Data imported successfully!');
+                    showAlert('Data imported successfully!');
                   },
                   'Import'
               );
             } catch (error) {
               console.error('Import error:', error);
-              alert('Failed to import file');
+              showAlert('Failed to import file');
             }
           };
           reader.readAsText(file);
@@ -2662,7 +2685,7 @@
       function generateNewSyncCode() {
         const code = generateSyncCode();
         setSyncCodeValue(code);
-        alert('New sync code created: ' + code);
+        showAlert('New sync code created: ' + code);
       }
 
       function disconnectSync() {
@@ -2679,7 +2702,7 @@
                 }
 
                 updateSettings();
-                alert('Sync disconnected');
+                showAlert('Sync disconnected');
             },
             'Disconnect'
         );
