@@ -1685,16 +1685,10 @@
                 input.value = '';
                 setLinkButtonsState('Linked', '#fff', '#BF3143', 'none');
 
-                // Wait for sync to complete, then reset button and show synced data
+                // Wait longer for Firebase to connect and sync data
                 setTimeout(() => {
                     setLinkButtonsState('Link', '#5b6474', '#eef2f7', 'none');
-                    // Refresh all views to show synced data
-                    renderTasks();
-                    renderFutureTasks();
-                    renderAllTasks();
-                    updateAssignmentPills();
-                    updateSettings();
-                }, 2000);
+                }, 3000);
             } else {
                 setLinkButtonsState('Link', '#5b6474', '#eef2f7', 'none');
             }
@@ -2486,8 +2480,9 @@
                 normalizeTaskAssignments();
                 updateAssignmentPills();
 
-                // Refresh view
+                // Refresh all views
                 renderTasks();
+                renderFutureTasks();
                 renderAllTasks();
 
             console.log(isFirstLoad ? '✅ Loaded from Firestore' : '✅ Synced from another device');
