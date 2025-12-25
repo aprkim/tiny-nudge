@@ -1559,6 +1559,11 @@
         }
 
         function updateSettings() {
+            // Check if space and current user exist
+            if (!state.space || !state.space.members || !state.currentUser) {
+                return;
+            }
+
             // Get partner's name (not current user)
             const partner = state.space.members.find(m => m.id !== state.currentUser.id);
             const partnerNamesInput = document.getElementById('partnerNamesInput');
