@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v22-fix-delete-sync -->
+    <!-- Build: 2026-01-10-v23-refresh-no-sync-required -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -2848,57 +2848,66 @@
         }
       }
 
-      // Refresh data from Firestore
+      // Refresh data from Firestore or localStorage
       async function refreshFromFirestore() {
-        if (!firebaseReady || !syncCode) {
-          showAlert('Sync is not enabled. Please enable sync in settings first.');
-          return;
-        }
-
         const refreshBtn = document.querySelector('.refresh-btn');
         if (refreshBtn) {
           refreshBtn.classList.add('refreshing');
         }
 
         try {
-          const userDoc = db.collection('tinyNudge').doc(syncCode);
-          const doc = await userDoc.get();
+          // If sync is enabled, fetch from Firestore
+          if (firebaseReady && syncCode) {
+            const userDoc = db.collection('tinyNudge').doc(syncCode);
+            const doc = await userDoc.get();
 
-          if (doc.exists) {
-            const remoteData = doc.data();
+            if (doc.exists) {
+              const remoteData = doc.data();
 
-            // Update state with remote data
-            if (remoteData.space) state.space = remoteData.space;
-            if (remoteData.tasks) state.tasks = remoteData.tasks;
+              // Update state with remote data
+              if (remoteData.space) state.space = remoteData.space;
+              if (remoteData.tasks) state.tasks = remoteData.tasks;
+
+              normalizeTaskAssignments();
+              updateAssignmentPills();
+
+              // Save to localStorage
+              localStorage.setItem(STORAGE_KEYS.SPACE, JSON.stringify(state.space));
+              localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
+
+              console.log('✅ Refreshed from Firestore');
+            } else {
+              console.log('⚠️ No remote data found');
+            }
+          } else {
+            // No sync enabled - just reload from localStorage and re-render
+            const savedSpace = localStorage.getItem(STORAGE_KEYS.SPACE);
+            const savedTasks = localStorage.getItem(STORAGE_KEYS.TASKS);
+
+            if (savedSpace) state.space = JSON.parse(savedSpace);
+            if (savedTasks) state.tasks = JSON.parse(savedTasks);
 
             normalizeTaskAssignments();
             updateAssignmentPills();
 
-            // Save to localStorage
-            localStorage.setItem(STORAGE_KEYS.SPACE, JSON.stringify(state.space));
-            localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
+            console.log('✅ Refreshed from localStorage');
+          }
 
-            // Refresh all views
-            renderTasks();
-            renderFutureTasks();
-            renderAllTasks();
+          // Refresh all views
+          renderTasks();
+          renderFutureTasks();
+          renderAllTasks();
 
-            console.log('✅ Refreshed from Firestore');
-
-            // Show brief success indicator
-            if (refreshBtn) {
-              refreshBtn.style.color = '#10b981';
-              setTimeout(() => {
-                refreshBtn.style.color = '';
-              }, 1000);
-            }
-          } else {
-            console.log('⚠️ No remote data found');
-            showAlert('No data found on server');
+          // Show brief success indicator
+          if (refreshBtn) {
+            refreshBtn.style.color = '#10b981';
+            setTimeout(() => {
+              refreshBtn.style.color = '';
+            }, 1000);
           }
         } catch (error) {
           console.error('❌ Refresh failed:', error);
-          showAlert('Failed to refresh data. Please check your connection.');
+          showAlert('Failed to refresh data. Please try again.');
         } finally {
           if (refreshBtn) {
             refreshBtn.classList.remove('refreshing');
