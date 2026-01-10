@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v24-refresh-red-success -->
+    <!-- Build: 2026-01-10-v25-clear-to-history -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -2298,9 +2298,14 @@
         function clearCompleted() {
             showConfirm(
                 'Clear completed tasks?',
-                'This will remove all tasks in the Done list.',
+                'This will move them to History only.',
                 () => {
-                    state.tasks = state.tasks.filter(t => !t.completed);
+                    // Mark completed tasks as archived instead of deleting
+                    state.tasks.forEach(t => {
+                        if (t.completed) {
+                            t.archived = true;
+                        }
+                    });
                     saveState();
                     renderTasks();
                 },
@@ -2402,8 +2407,8 @@
         function renderTasks(skipSort = false) {
             const today = new Date().toDateString();
 
-            const activeTasks = state.tasks.filter(t => !t.completed && !t.isFuture);
-            const completedTasks = state.tasks.filter(t => t.completed && !t.isFuture);
+            const activeTasks = state.tasks.filter(t => !t.completed && !t.isFuture && !t.archived);
+            const completedTasks = state.tasks.filter(t => t.completed && !t.isFuture && !t.archived);
 
             // Sort active tasks: priority (starred) first, then by due date (closest first), then oldest first
             // Skip sorting when we just added a task (so it stays at top)
@@ -2595,7 +2600,7 @@
 
         function renderFutureTasks(skipSort = false) {
             const container = document.getElementById('futureTasks');
-            const futureTasks = state.tasks.filter(t => t.isFuture);
+            const futureTasks = state.tasks.filter(t => t.isFuture && !t.archived);
 
             if (futureTasks.length === 0) {
                 container.innerHTML = `
