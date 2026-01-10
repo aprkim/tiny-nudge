@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v21-refresh-button -->
+    <!-- Build: 2026-01-10-v22-fix-delete-sync -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -2847,13 +2847,6 @@
           }
         }
       }
-
-      // Hook into existing save function
-      const originalSaveState = saveState;
-      saveState = function() {
-        originalSaveState();
-        saveToFirestore();
-      };
 
       // Refresh data from Firestore
       async function refreshFromFirestore() {
