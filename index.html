@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-04-v20-star-hover-red -->
+    <!-- Build: 2026-01-10-v21-refresh-button -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -717,6 +717,38 @@
             font-size: 15px;
         }
 
+        /* ==================== REFRESH BUTTON ==================== */
+        .refresh-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            color: #94A3B8;
+            transition: all 0.3s;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .refresh-btn:hover {
+            color: #64748b;
+            background: #f1f5f9;
+        }
+
+        .refresh-btn:active {
+            transform: rotate(180deg);
+        }
+
+        .refresh-btn.refreshing {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         /* ==================== BOTTOM NAV ==================== */
         .bottom-nav {
             position: fixed;
@@ -1134,8 +1166,19 @@
             <div class="container">
                 <a href="https://tinywins.space" class="suite-back-link">← TinyWins</a>
                 <div class="header">
-                    <h1 class="header-title">Now</h1>
-                    <p class="header-subtitle" id="todayDate"></p>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <h1 class="header-title">Now</h1>
+                            <p class="header-subtitle" id="todayDate"></p>
+                        </div>
+                        <button onclick="refreshFromFirestore()" class="refresh-btn" aria-label="Refresh data" title="Refresh from server">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="task-input-container">
@@ -2811,6 +2854,64 @@
         originalSaveState();
         saveToFirestore();
       };
+
+      // Refresh data from Firestore
+      async function refreshFromFirestore() {
+        if (!firebaseReady || !syncCode) {
+          showAlert('Sync is not enabled. Please enable sync in settings first.');
+          return;
+        }
+
+        const refreshBtn = document.querySelector('.refresh-btn');
+        if (refreshBtn) {
+          refreshBtn.classList.add('refreshing');
+        }
+
+        try {
+          const userDoc = db.collection('tinyNudge').doc(syncCode);
+          const doc = await userDoc.get();
+
+          if (doc.exists) {
+            const remoteData = doc.data();
+
+            // Update state with remote data
+            if (remoteData.space) state.space = remoteData.space;
+            if (remoteData.tasks) state.tasks = remoteData.tasks;
+
+            normalizeTaskAssignments();
+            updateAssignmentPills();
+
+            // Save to localStorage
+            localStorage.setItem(STORAGE_KEYS.SPACE, JSON.stringify(state.space));
+            localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
+
+            // Refresh all views
+            renderTasks();
+            renderFutureTasks();
+            renderAllTasks();
+
+            console.log('✅ Refreshed from Firestore');
+
+            // Show brief success indicator
+            if (refreshBtn) {
+              refreshBtn.style.color = '#10b981';
+              setTimeout(() => {
+                refreshBtn.style.color = '';
+              }, 1000);
+            }
+          } else {
+            console.log('⚠️ No remote data found');
+            showAlert('No data found on server');
+          }
+        } catch (error) {
+          console.error('❌ Refresh failed:', error);
+          showAlert('Failed to refresh data. Please check your connection.');
+        } finally {
+          if (refreshBtn) {
+            refreshBtn.classList.remove('refreshing');
+          }
+        }
+      }
 
       // Export/Import functions
       function exportData() {
