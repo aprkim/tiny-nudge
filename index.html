@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v27-history-clear-aligned -->
+    <!-- Build: 2026-01-10-v28-clear-all-with-date -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -1292,12 +1292,9 @@
         <!-- ALL TASKS VIEW -->
         <div id="view-all" class="view">
             <div class="container">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px;">
-                    <div class="header" style="margin-bottom: 0;">
-                        <h1 class="header-title">History</h1>
-                        <p class="header-subtitle">Everything you're tracking</p>
-                    </div>
-                    <button onclick="clearHistory()" id="clearHistoryBtn" class="clear-btn" style="display: none;">Clear All</button>
+                <div class="header">
+                    <h1 class="header-title">History</h1>
+                    <p class="header-subtitle">Everything you're tracking</p>
                 </div>
 
                 <div id="allTasksList"></div>
@@ -2566,12 +2563,6 @@
             console.log('✅ Completed tasks with timestamp:', completedTasks.length);
             console.log('🔍 All tasks details:', state.tasks.map(t => ({ text: t.text, completed: t.completed, completed_at: t.completed_at })));
 
-            // Show/hide clear history button
-            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-            if (clearHistoryBtn) {
-                clearHistoryBtn.style.display = completedTasks.length > 0 ? 'block' : 'none';
-            }
-
             if (completedTasks.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -2605,14 +2596,22 @@
 
             // Render grouped tasks
             let html = '';
+            let isFirstSection = true;
             Object.entries(groupedByDate).forEach(([dateKey, tasks]) => {
                 const date = new Date(dateKey);
                 const isToday = dateKey === new Date().toDateString();
                 const formattedDate = isToday ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+                // Add Clear All button on the first section only
+                const clearButton = isFirstSection ? `<button onclick="clearHistory()" class="clear-btn">Clear All</button>` : '';
+                isFirstSection = false;
+
                 html += `
                     <div class="task-section">
-                        <h2 class="section-title">${formattedDate}</h2>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                            <h2 class="section-title" style="margin-bottom: 0;">${formattedDate}</h2>
+                            ${clearButton}
+                        </div>
                         ${tasks.map(task => renderTaskCard(task)).join('')}
                     </div>
                 `;
