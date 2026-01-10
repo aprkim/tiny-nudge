@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v29-fix-later-checkbox -->
+    <!-- Build: 2026-01-10-v30-uncheck-returns-to-tab -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -2266,10 +2266,11 @@
                 task.completed_at = Date.now();
                 task.completed_by = state.currentUser.name;
             } else {
-                // Uncompleting the task
+                // Uncompleting the task - moves it back to Now or Later tab
                 task.completed = false;
                 task.completed_at = null;
                 task.completed_by = null;
+                task.archived = false; // Remove archived flag so it appears in Now/Later
             }
 
             saveState();
