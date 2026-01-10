@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v25-clear-to-history -->
+    <!-- Build: 2026-01-10-v26-history-clear-all -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -1298,6 +1298,8 @@
                 </div>
 
                 <div id="allTasksList"></div>
+
+                <button onclick="clearHistory()" id="clearHistoryBtn" class="clear-btn" style="display: none; margin-top: 20px;">Clear All History</button>
             </div>
         </div>
 
@@ -2313,6 +2315,20 @@
             );
         }
 
+        function clearHistory() {
+            showConfirm(
+                'Clear all history?',
+                'This will permanently delete all completed tasks.',
+                () => {
+                    // Delete all completed tasks from state
+                    state.tasks = state.tasks.filter(t => !t.completed);
+                    saveState();
+                    renderAllTasks();
+                },
+                'Clear All'
+            );
+        }
+
         function showAlert(message) {
             document.getElementById('confirmTitle').textContent = message;
             document.getElementById('confirmSubtitle').textContent = '';
@@ -2548,6 +2564,12 @@
             console.log('📋 All tasks:', state.tasks.length);
             console.log('✅ Completed tasks with timestamp:', completedTasks.length);
             console.log('🔍 All tasks details:', state.tasks.map(t => ({ text: t.text, completed: t.completed, completed_at: t.completed_at })));
+
+            // Show/hide clear history button
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+            if (clearHistoryBtn) {
+                clearHistoryBtn.style.display = completedTasks.length > 0 ? 'block' : 'none';
+            }
 
             if (completedTasks.length === 0) {
                 container.innerHTML = `
