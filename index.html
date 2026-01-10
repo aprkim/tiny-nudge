@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v30-uncheck-returns-to-tab -->
+    <!-- Build: 2026-01-10-v31-realtime-sync -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -2705,6 +2705,7 @@
       let syncCode = null;
       let unsubscribe = null;
       let isFirstLoad = true;
+      let justSaved = false; // Track if we just saved locally to skip next snapshot
 
       // Generate a memorable 6-word sync code
       function generateSyncCode() {
@@ -2813,11 +2814,16 @@
                 // Check if this change came from local (hasPendingWrites) or remote
                 const isLocalChange = doc.metadata.hasPendingWrites;
 
-                // Only update and re-render if this is the initial load
-                // For subsequent snapshots (including write confirmations), we ignore them
-                // This prevents re-sorting when the user just added a task
-                if (!isLocalChange && isFirstLoad) {
-                    // Initial load - apply remote data and sort
+                // Skip the confirmation snapshot right after we save
+                if (!isLocalChange && justSaved) {
+                    console.log('✅ Skipping confirmation snapshot after local save');
+                    justSaved = false;
+                    return;
+                }
+
+                // Update from remote changes (other users) or initial load
+                if (!isLocalChange) {
+                    // Apply remote data
                     if (remoteData.space) state.space = remoteData.space;
                     if (remoteData.tasks) state.tasks = remoteData.tasks;
 
@@ -2832,11 +2838,11 @@
                     renderTasks();
                     renderFutureTasks();
                     renderAllTasks();
-                }
-                // Note: We intentionally don't handle remote changes from other devices during the same session
-                // The user will see changes when they refresh the page
 
-            console.log(isLocalChange ? '✅ Local change confirmed' : (isFirstLoad ? '✅ Loaded from Firestore' : '✅ Snapshot ignored (not first load)'));
+                    console.log(isFirstLoad ? '✅ Loaded from Firestore' : '✅ Updated from other user');
+                } else {
+                    console.log('✅ Local change pending...');
+                }
           } else if (!doc.exists && isFirstLoad) {
             // No remote data yet, push local data
             saveToFirestore();
@@ -2861,6 +2867,8 @@
         }
 
         console.log('💾 Saving to Firestore... tasks:', state.tasks.length);
+        justSaved = true; // Mark that we just saved locally
+
         try {
           await db.collection('tinyNudge').doc(syncCode).set({
             space: state.space,
@@ -2871,6 +2879,7 @@
           console.log('✅ Saved to Firestore');
         } catch (error) {
           console.error('❌ Save failed:', error);
+          justSaved = false; // Reset on error
           if (error.code === 'permission-denied') {
             console.warn('⚠️ Firestore rules not deployed');
             firebaseReady = false;
