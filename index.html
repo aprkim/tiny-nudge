@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v26-history-clear-all -->
+    <!-- Build: 2026-01-10-v27-history-clear-aligned -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -1292,14 +1292,15 @@
         <!-- ALL TASKS VIEW -->
         <div id="view-all" class="view">
             <div class="container">
-                <div class="header">
-                    <h1 class="header-title">History</h1>
-                    <p class="header-subtitle">Everything you're tracking</p>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px;">
+                    <div class="header" style="margin-bottom: 0;">
+                        <h1 class="header-title">History</h1>
+                        <p class="header-subtitle">Everything you're tracking</p>
+                    </div>
+                    <button onclick="clearHistory()" id="clearHistoryBtn" class="clear-btn" style="display: none;">Clear All</button>
                 </div>
 
                 <div id="allTasksList"></div>
-
-                <button onclick="clearHistory()" id="clearHistoryBtn" class="clear-btn" style="display: none; margin-top: 20px;">Clear All History</button>
             </div>
         </div>
 
