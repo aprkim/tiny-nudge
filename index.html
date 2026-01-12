@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tiny Nudge – Shared tasks for couples</title>
-    <!-- Build: 2026-01-10-v31-realtime-sync -->
+    <!-- Build: 2026-01-12-v32-sync-fix -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <meta property="og:title" content="Tiny Nudge">
@@ -2265,14 +2265,17 @@
                 task.completed = true;
                 task.completed_at = Date.now();
                 task.completed_by = state.currentUser.name;
+                console.log('✓ Task completed:', task.text, 'ID:', taskId, 'completed:', task.completed);
             } else {
                 // Uncompleting the task - moves it back to Now or Later tab
                 task.completed = false;
                 task.completed_at = null;
                 task.completed_by = null;
                 task.archived = false; // Remove archived flag so it appears in Now/Later
+                console.log('○ Task uncompleted:', task.text, 'ID:', taskId, 'completed:', task.completed);
             }
 
+            console.log('📝 About to save state, task completed status:', task.completed);
             saveState();
             renderTasks();
             renderFutureTasks();
@@ -2817,7 +2820,7 @@
                 // Skip the confirmation snapshot right after we save
                 if (!isLocalChange && justSaved) {
                     console.log('✅ Skipping confirmation snapshot after local save');
-                    justSaved = false;
+                    justSaved = false; // Reset flag so we don't skip future updates
                     return;
                 }
 
@@ -2825,7 +2828,12 @@
                 if (!isLocalChange) {
                     // Apply remote data
                     if (remoteData.space) state.space = remoteData.space;
-                    if (remoteData.tasks) state.tasks = remoteData.tasks;
+                    if (remoteData.tasks) {
+                        console.log('📥 Applying remote tasks, checking completed states...');
+                        const completedCount = remoteData.tasks.filter(t => t.completed).length;
+                        console.log('   Remote has', completedCount, 'completed tasks out of', remoteData.tasks.length);
+                        state.tasks = remoteData.tasks;
+                    }
 
                     normalizeTaskAssignments();
                     updateAssignmentPills();
@@ -2866,8 +2874,14 @@
           return;
         }
 
-        console.log('💾 Saving to Firestore... tasks:', state.tasks.length);
+        const completedCount = state.tasks.filter(t => t.completed).length;
+        console.log('💾 Saving to Firestore... tasks:', state.tasks.length, 'completed:', completedCount);
         justSaved = true; // Mark that we just saved locally
+
+        // Reset justSaved after a short delay to prevent blocking real remote updates
+        setTimeout(() => {
+          justSaved = false;
+        }, 1000);
 
         try {
           await db.collection('tinyNudge').doc(syncCode).set({
@@ -2876,10 +2890,10 @@
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
 
-          console.log('✅ Saved to Firestore');
+          console.log('✅ Saved to Firestore, completed:', completedCount);
         } catch (error) {
           console.error('❌ Save failed:', error);
-          justSaved = false; // Reset on error
+          justSaved = false; // Reset on error immediately
           if (error.code === 'permission-denied') {
             console.warn('⚠️ Firestore rules not deployed');
             firebaseReady = false;
