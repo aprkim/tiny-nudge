@@ -361,26 +361,6 @@
         }
 
         /* Input Star */
-        .input-star {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 6px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            border-radius: 6px;
-        }
-
-        .input-star:hover svg {
-            stroke: #BF3143;
-        }
-
-        .input-star.active svg {
-            fill: #BF3143;
-            stroke: #BF3143;
-        }
-
         /* Input Date */
         .input-date {
             background: transparent;
@@ -1197,13 +1177,6 @@
                                 </div>
                             </div>
 
-                            <!-- Priority Star -->
-                            <button class="input-star" id="inputStar" onclick="toggleInputStar()" aria-label="Mark as priority">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                </svg>
-                            </button>
-
                             <!-- Due Date -->
                             <button class="input-date" id="inputDate" onclick="toggleDatePicker()" aria-label="Set due date">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" xmlns="http://www.w3.org/2000/svg">
@@ -1932,7 +1905,6 @@
 
         // ==================== TASKS ====================
         let newTaskAssignment = 'anyone';
-        let newTaskPriority = false;
         let newTaskDueDate = null;
 
         let newFutureTaskAssignment = 'anyone';
@@ -2049,19 +2021,6 @@
             });
         }
 
-        function toggleInputStar() {
-            newTaskPriority = !newTaskPriority;
-            const btn = document.getElementById('inputStar');
-            btn.classList.toggle('active', newTaskPriority);
-            const svg = btn.querySelector('svg');
-            if (newTaskPriority) {
-                svg.setAttribute('fill', '#BF3143');
-                svg.setAttribute('stroke', '#BF3143');
-            } else {
-                svg.setAttribute('fill', 'none');
-                svg.setAttribute('stroke', '#94A3B8');
-            }
-        }
 
         function toggleDatePicker() {
             state.isSettingFutureDate = false;
@@ -2128,7 +2087,7 @@
                 text: text,
                 assignment: newTaskAssignment,
                 assigned_to: assignedTo,
-                priority: newTaskPriority,
+                priority: false,
                 due_date: newTaskDueDate,
                 completed: false,
                 completed_at: null,
@@ -2150,14 +2109,6 @@
             document.querySelectorAll('.assignment-pill').forEach(pill => {
                 pill.classList.toggle('active', pill.dataset.assignment === 'anyone');
             });
-
-            // Reset priority
-            newTaskPriority = false;
-            const starBtn = document.getElementById('inputStar');
-            starBtn.classList.remove('active');
-            const starSvg = starBtn.querySelector('svg');
-            starSvg.setAttribute('fill', 'none');
-            starSvg.setAttribute('stroke', '#94A3B8');
 
             // Reset due date
             newTaskDueDate = null;
