@@ -2660,7 +2660,7 @@
       let syncCode = null;
       let unsubscribe = null;
       let isFirstLoad = true;
-      let justSaved = false; // Track if we just saved locally to skip next snapshot
+      let lastSaveTimestamp = 0; // Track when we last saved to detect server confirmations
 
       // Generate a memorable 6-word sync code
       function generateSyncCode() {
@@ -2701,6 +2701,7 @@
         // Restart Firebase sync with new code
         if (unsubscribe) unsubscribe();
         isFirstLoad = true;
+        lastSaveTimestamp = 0;
         setupFirebaseSync();
 
         return true;
@@ -2769,11 +2770,15 @@
                 // Check if this change came from local (hasPendingWrites) or remote
                 const isLocalChange = doc.metadata.hasPendingWrites;
 
-                // Skip the confirmation snapshot right after we save
-                if (!isLocalChange && justSaved) {
-                    console.log('✅ Skipping confirmation snapshot after local save');
-                    justSaved = false; // Reset flag so we don't skip future updates
-                    return;
+                // Skip server confirmation snapshots that come shortly after our save
+                // This prevents the server confirmation from overwriting our local state
+                if (!isLocalChange) {
+                    const timeSinceLastSave = Date.now() - lastSaveTimestamp;
+                    if (lastSaveTimestamp > 0 && timeSinceLastSave < 3000) {
+                        console.log('✅ Skipping server confirmation snapshot (saved', timeSinceLastSave, 'ms ago)');
+                        lastSaveTimestamp = 0; // Reset so we don't skip the next real remote update
+                        return;
+                    }
                 }
 
                 // Update from remote changes (other users) or initial load
@@ -2828,12 +2833,7 @@
 
         const completedCount = state.tasks.filter(t => t.completed).length;
         console.log('💾 Saving to Firestore... tasks:', state.tasks.length, 'completed:', completedCount);
-        justSaved = true; // Mark that we just saved locally
-
-        // Reset justSaved after a short delay to prevent blocking real remote updates
-        setTimeout(() => {
-          justSaved = false;
-        }, 1000);
+        lastSaveTimestamp = Date.now(); // Mark when we saved to skip server confirmation
 
         try {
           await db.collection('tinyNudge').doc(syncCode).set({
@@ -2845,7 +2845,7 @@
           console.log('✅ Saved to Firestore, completed:', completedCount);
         } catch (error) {
           console.error('❌ Save failed:', error);
-          justSaved = false; // Reset on error immediately
+          lastSaveTimestamp = 0; // Reset on error immediately
           if (error.code === 'permission-denied') {
             console.warn('⚠️ Firestore rules not deployed');
             firebaseReady = false;
