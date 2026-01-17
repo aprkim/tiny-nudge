@@ -1,10 +1,83 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to access data by sync code
-    // Sync codes act as shared keys for cross-device access
+    // Tiny Nudge - sync code based access
     match /tinyNudge/{syncCode} {
       allow read, write: if request.auth != null;
+    }
+
+    // Tiny Body - sync code based access
+    match /tinyBody/{syncCode} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Tiny Body Users - user profile for email/sync code linking
+    match /tinyBodyUsers/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Tiny Do (tinyWins) - sync code based access
+    match /tinyWins/{syncCode} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Tiny Study - sync code based access
+    match /tinyStudy/{syncCode} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Tiny Meals collections
+    match /ideas/{ideaId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.user_id == request.auth.uid ||
+        (exists(/databases/$(database)/documents/user_links/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/user_links/$(request.auth.uid)).data.linked_to == resource.data.user_id)
+      );
+    }
+
+    match /recipes/{recipeId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.user_id == request.auth.uid ||
+        (exists(/databases/$(database)/documents/user_links/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/user_links/$(request.auth.uid)).data.linked_to == resource.data.user_id)
+      );
+    }
+
+    match /history/{historyId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.user_id == request.auth.uid;
+    }
+
+    match /guests/{guestId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.user_id == request.auth.uid;
+    }
+
+    match /user_links/{userId} {
+      allow create, update: if request.auth != null && userId == request.auth.uid;
+      allow read: if request.auth != null;
+      allow delete: if request.auth != null && userId == request.auth.uid;
+    }
+
+    match /weekly_plans/{planId} {
+      allow create, read: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.user_id == request.auth.uid ||
+        (exists(/databases/$(database)/documents/user_links/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/user_links/$(request.auth.uid)).data.linked_to == resource.data.user_id)
+      );
+    }
+
+    match /sync_codes/{syncCode} {
+      allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.user_id == request.auth.uid;
     }
   }
 }
