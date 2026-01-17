@@ -1130,7 +1130,7 @@
             </div>
             <h1 class="onboarding-title">Tiny Nudge</h1>
             <p class="onboarding-subtitle">Shared tasks for couples. Stay in sync without pressure.</p>
-            <div class="version">v2026.01.17-02:38</div>
+            <div class="version">v2026.01.17-02:42</div>
         </div>
 
         <div class="setup-form">
@@ -2735,16 +2735,24 @@
       }
 
       // Handle click on sync status icon
-      function handleSyncStatusClick() {
+      async function handleSyncStatusClick() {
         const statusEl = document.getElementById('syncStatus');
         if (statusEl && statusEl.textContent === '⚠️') {
-          // Retry sync
+          // Retry sync with re-authentication
           console.log('🔄 Manual retry triggered');
           syncRetryCount = 0;
           updateSyncStatus('reconnecting', 'Reconnecting...', false);
           if (unsubscribe) unsubscribe();
-          isFirstLoad = true;
-          setupFirebaseSync();
+          try {
+            await auth.signInAnonymously();
+            console.log('✅ Re-authenticated');
+            firebaseReady = true;
+            isFirstLoad = true;
+            setupFirebaseSync();
+          } catch (err) {
+            console.error('❌ Re-auth failed:', err);
+            updateSyncStatus('⚠️', 'Sync unavailable - tap to retry', false);
+          }
         } else {
           // Show sync code
           showSyncCodeCard();
@@ -2921,11 +2929,21 @@
             if (syncRetryCount < MAX_SYNC_RETRIES) {
               console.log('🔄 Retrying sync... attempt', syncRetryCount + 1);
               updateSyncStatus('reconnecting', 'Reconnecting...', false);
-              // Retry after a delay
-              setTimeout(() => {
+              // Re-authenticate and retry after a delay
+              setTimeout(async () => {
                 if (unsubscribe) unsubscribe();
-                isFirstLoad = true;
-                setupFirebaseSync();
+                try {
+                  // Re-authenticate
+                  await auth.signInAnonymously();
+                  console.log('✅ Re-authenticated');
+                  firebaseReady = true;
+                  isFirstLoad = true;
+                  setupFirebaseSync();
+                } catch (authErr) {
+                  console.error('❌ Re-auth failed:', authErr);
+                  syncRetryCount = MAX_SYNC_RETRIES; // Skip to failure
+                  updateSyncStatus('⚠️', 'Sync unavailable - tap to retry', false);
+                }
               }, 2000 * syncRetryCount); // Exponential backoff: 2s, 4s, 6s
             } else {
               console.warn('⚠️ Sync failed after', MAX_SYNC_RETRIES, 'retries');
