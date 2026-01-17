@@ -1524,13 +1524,29 @@
             const urlParams = new URLSearchParams(window.location.search);
             const syncCodeFromUrl = urlParams.get('sync');
 
-            if (syncCodeFromUrl && !state.space) {
-                // User clicked a share link - show sync input with code pre-filled
-                document.getElementById('onboardingSyncCodeInput').value = syncCodeFromUrl;
-                showOnboardingSyncInput();
-                // Clear URL parameter
+            if (syncCodeFromUrl) {
+                const currentSyncCode = localStorage.getItem('tinyNudge_syncCode');
+
+                if (syncCodeFromUrl !== currentSyncCode) {
+                    // Different sync code - apply it
+                    localStorage.setItem('tinyNudge_syncCode', syncCodeFromUrl.trim().toLowerCase());
+                    console.log('🔑 Sync code set from URL:', syncCodeFromUrl);
+
+                    if (!state.space) {
+                        // New user - show sync input with code pre-filled
+                        document.getElementById('onboardingSyncCodeInput').value = syncCodeFromUrl;
+                        showOnboardingSyncInput();
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        return;
+                    } else {
+                        // Existing user - reload to fetch data for new sync code
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        window.location.reload();
+                        return;
+                    }
+                }
+                // Clear URL parameter if same sync code
                 window.history.replaceState({}, document.title, window.location.pathname);
-                return;
             }
 
             if (!state.space) {
