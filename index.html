@@ -1123,7 +1123,7 @@
             </div>
             <h1 class="onboarding-title">Tiny Nudge</h1>
             <p class="onboarding-subtitle">Shared tasks for couples. Stay in sync without pressure.</p>
-            <div class="version">v2026.01.17-02:23</div>
+            <div class="version">v2026.01.17-02:33</div>
         </div>
 
         <div class="setup-form">
@@ -1184,7 +1184,7 @@
                             <p class="header-subtitle" id="todayDate"></p>
                         </div>
                         <div class="header-actions">
-                            <span id="syncStatus" class="sync-status" onclick="showSyncCodeCard()" title="Initializing..."></span>
+                            <span id="syncStatus" class="sync-status" onclick="handleSyncStatusClick()" title="Initializing..."></span>
                             <button onclick="refreshFromFirestore()" class="refresh-btn" id="refreshBtn" aria-label="Refresh data" title="Refresh from server">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="23 4 23 10 17 10"></polyline>
@@ -2695,6 +2695,8 @@
       let unsubscribe = null;
       let isFirstLoad = true;
       let lastSaveTimestamp = 0; // Track when we last saved to detect server confirmations
+      let syncRetryCount = 0;
+      const MAX_SYNC_RETRIES = 3;
 
       // Update sync status indicator
       function updateSyncStatus(icon, title, synced = false) {
@@ -2715,6 +2717,23 @@
           } else {
             refreshBtn.classList.remove('visible');
           }
+        }
+      }
+
+      // Handle click on sync status icon
+      function handleSyncStatusClick() {
+        const statusEl = document.getElementById('syncStatus');
+        if (statusEl && statusEl.textContent === '⚠️') {
+          // Retry sync
+          console.log('🔄 Manual retry triggered');
+          syncRetryCount = 0;
+          updateSyncStatus('🔄', 'Reconnecting...', false);
+          if (unsubscribe) unsubscribe();
+          isFirstLoad = true;
+          setupFirebaseSync();
+        } else {
+          // Show sync code
+          showSyncCodeCard();
         }
       }
 
@@ -2873,12 +2892,25 @@
           }
 
           isFirstLoad = false;
+          syncRetryCount = 0; // Reset retry count on success
         }, (error) => {
           console.error('❌ Sync error:', error);
           if (error.code === 'permission-denied') {
-            console.warn('⚠️ Firestore rules not deployed yet');
-            firebaseReady = false;
-            updateSyncStatus('⚠️', 'Sync unavailable', false);
+            syncRetryCount++;
+            if (syncRetryCount < MAX_SYNC_RETRIES) {
+              console.log('🔄 Retrying sync... attempt', syncRetryCount + 1);
+              updateSyncStatus('🔄', 'Reconnecting...', false);
+              // Retry after a delay
+              setTimeout(() => {
+                if (unsubscribe) unsubscribe();
+                isFirstLoad = true;
+                setupFirebaseSync();
+              }, 2000 * syncRetryCount); // Exponential backoff: 2s, 4s, 6s
+            } else {
+              console.warn('⚠️ Sync failed after', MAX_SYNC_RETRIES, 'retries');
+              firebaseReady = false;
+              updateSyncStatus('⚠️', 'Sync unavailable - tap to retry', false);
+            }
           }
         });
       }
