@@ -2809,7 +2809,7 @@
 
       } catch (error) {
         console.error('❌ Firebase init failed:', error);
-        updateSyncStatus('📱', 'Local only', false);
+        updateSyncStatus('📂', 'Local only', false);
       }
 
       // Setup Firebase real-time sync
@@ -3066,7 +3066,7 @@
                     unsubscribe = null;
                 }
 
-                updateSyncStatus('📱', 'Local only', false);
+                updateSyncStatus('📂', 'Local only', false);
                 updateSettings();
                 showAlert('Sync disconnected');
             },
