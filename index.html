@@ -2783,28 +2783,90 @@
 
                 // Update from remote changes (other users) or initial load
                 if (!isLocalChange) {
-                    // Apply remote data
-                    if (remoteData.space) state.space = remoteData.space;
-                    if (remoteData.tasks) {
-                        console.log('📥 Applying remote tasks, checking completed states...');
-                        const completedCount = remoteData.tasks.filter(t => t.completed).length;
-                        console.log('   Remote has', completedCount, 'completed tasks out of', remoteData.tasks.length);
-                        state.tasks = remoteData.tasks;
+                    // On first load, merge remote data with local data instead of overwriting
+                    // This preserves local changes that may not have synced yet
+                    if (isFirstLoad && state.tasks.length > 0) {
+                        console.log('📥 First load: merging remote with local data...');
+
+                        // Create a map of local tasks by ID for quick lookup
+                        const localTaskMap = new Map(state.tasks.map(t => [t.id, t]));
+                        const remoteTasks = remoteData.tasks || [];
+
+                        // Merge strategy: for each task, use the one with the more recent update
+                        const mergedTasks = [];
+                        const processedIds = new Set();
+
+                        // Process remote tasks
+                        for (const remoteTask of remoteTasks) {
+                            const localTask = localTaskMap.get(remoteTask.id);
+                            if (localTask) {
+                                // Task exists in both - use the one with more recent completion/update
+                                const localTime = localTask.completed_at || localTask.created_at || 0;
+                                const remoteTime = remoteTask.completed_at || remoteTask.created_at || 0;
+
+                                // If local task was completed more recently, keep local
+                                // Also check if completed status differs and local is newer
+                                if (localTask.completed !== remoteTask.completed) {
+                                    // Completion status differs - use the one that was changed more recently
+                                    if (localTime >= remoteTime) {
+                                        console.log('   Keeping local version of task:', localTask.text, '(local completed:', localTask.completed, ')');
+                                        mergedTasks.push(localTask);
+                                    } else {
+                                        console.log('   Using remote version of task:', remoteTask.text, '(remote completed:', remoteTask.completed, ')');
+                                        mergedTasks.push(remoteTask);
+                                    }
+                                } else {
+                                    // Same completion status - use remote as it's the source of truth
+                                    mergedTasks.push(remoteTask);
+                                }
+                            } else {
+                                // Task only exists remotely - add it
+                                mergedTasks.push(remoteTask);
+                            }
+                            processedIds.add(remoteTask.id);
+                        }
+
+                        // Add any local-only tasks (not in remote yet)
+                        for (const localTask of state.tasks) {
+                            if (!processedIds.has(localTask.id)) {
+                                console.log('   Keeping local-only task:', localTask.text);
+                                mergedTasks.push(localTask);
+                            }
+                        }
+
+                        state.tasks = mergedTasks;
+                        if (remoteData.space) state.space = remoteData.space;
+
+                        // Re-save merged state to both localStorage and Firestore
+                        localStorage.setItem(STORAGE_KEYS.SPACE, JSON.stringify(state.space));
+                        localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
+                        saveToFirestore();
+
+                        console.log('✅ Merged local and remote data');
+                    } else {
+                        // No local data or not first load - apply remote data directly
+                        if (remoteData.space) state.space = remoteData.space;
+                        if (remoteData.tasks) {
+                            console.log('📥 Applying remote tasks, checking completed states...');
+                            const completedCount = remoteData.tasks.filter(t => t.completed).length;
+                            console.log('   Remote has', completedCount, 'completed tasks out of', remoteData.tasks.length);
+                            state.tasks = remoteData.tasks;
+                        }
+
+                        // Save to localStorage after syncing from Firebase
+                        localStorage.setItem(STORAGE_KEYS.SPACE, JSON.stringify(state.space));
+                        localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
+
+                        console.log(isFirstLoad ? '✅ Loaded from Firestore' : '✅ Updated from other user');
                     }
 
                     normalizeTaskAssignments();
                     updateAssignmentPills();
 
-                    // Save to localStorage after syncing from Firebase
-                    localStorage.setItem(STORAGE_KEYS.SPACE, JSON.stringify(state.space));
-                    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
-
                     // Refresh all views (will sort)
                     renderTasks();
                     renderFutureTasks();
                     renderAllTasks();
-
-                    console.log(isFirstLoad ? '✅ Loaded from Firestore' : '✅ Updated from other user');
                 } else {
                     console.log('✅ Local change pending...');
                 }
