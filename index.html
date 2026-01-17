@@ -925,7 +925,8 @@
             border-radius: 16px;
             padding: 24px;
             max-width: 400px;
-            width: 100%;
+            width: calc(100% - 40px);
+            margin: 0 20px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             position: relative;
             transform: scale(0.95);
@@ -1496,7 +1497,7 @@
         <div class="modal">
             <button class="modal-close" aria-label="Close" onclick="closeDateModal()">&times;</button>
             <h3 class="modal-title">Set Due Date</h3>
-            <input type="date" id="dateInputPicker" class="form-input" style="margin-bottom: 16px;">
+            <input type="date" id="dateInputPicker" class="form-input" style="margin-bottom: 16px; max-width: 100%; width: 100%; box-sizing: border-box;">
             <div class="modal-actions">
                 <button class="modal-btn modal-btn-secondary" onclick="clearDate()">Clear</button>
                 <button class="modal-btn modal-btn-primary" onclick="saveDate()">Set Date</button>
