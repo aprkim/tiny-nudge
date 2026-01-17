@@ -706,7 +706,25 @@
             font-size: 15px;
         }
 
-        /* ==================== REFRESH BUTTON ==================== */
+        /* ==================== SYNC STATUS & REFRESH BUTTON ==================== */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sync-status {
+            font-size: 16px;
+            padding: 8px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .sync-status.visible {
+            opacity: 1;
+        }
+
         .refresh-btn {
             background: transparent;
             border: none;
@@ -715,9 +733,13 @@
             color: #94A3B8;
             transition: all 0.3s;
             border-radius: 50%;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
+        }
+
+        .refresh-btn.visible {
+            display: flex;
         }
 
         .refresh-btn:hover {
@@ -1101,7 +1123,7 @@
             </div>
             <h1 class="onboarding-title">Tiny Nudge</h1>
             <p class="onboarding-subtitle">Shared tasks for couples. Stay in sync without pressure.</p>
-            <div class="version">v2026.01.17-02:17</div>
+            <div class="version">v2026.01.17-02:23</div>
         </div>
 
         <div class="setup-form">
@@ -1161,13 +1183,16 @@
                             <h1 class="header-title">Now</h1>
                             <p class="header-subtitle" id="todayDate"></p>
                         </div>
-                        <button onclick="refreshFromFirestore()" class="refresh-btn" aria-label="Refresh data" title="Refresh from server">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <polyline points="1 20 1 14 7 14"></polyline>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
-                        </button>
+                        <div class="header-actions">
+                            <span id="syncStatus" class="sync-status" onclick="showSyncCodeCard()" title="Initializing..."></span>
+                            <button onclick="refreshFromFirestore()" class="refresh-btn" id="refreshBtn" aria-label="Refresh data" title="Refresh from server">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <polyline points="1 20 1 14 7 14"></polyline>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2671,6 +2696,28 @@
       let isFirstLoad = true;
       let lastSaveTimestamp = 0; // Track when we last saved to detect server confirmations
 
+      // Update sync status indicator
+      function updateSyncStatus(icon, title, synced = false) {
+        const statusEl = document.getElementById('syncStatus');
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (statusEl) {
+          statusEl.textContent = icon;
+          statusEl.title = title;
+          if (icon) {
+            statusEl.classList.add('visible');
+          } else {
+            statusEl.classList.remove('visible');
+          }
+        }
+        if (refreshBtn) {
+          if (synced) {
+            refreshBtn.classList.add('visible');
+          } else {
+            refreshBtn.classList.remove('visible');
+          }
+        }
+      }
+
       // Generate a memorable 6-word sync code
       function generateSyncCode() {
         const words = [
@@ -2749,6 +2796,7 @@
 
             console.log('✅ User ID:', user.uid);
             console.log('🔑 Sync enabled');
+            updateSyncStatus('☁️', 'Synced across devices', true);
             setupFirebaseSync();
           } else {
             auth.signInAnonymously()
@@ -2761,6 +2809,7 @@
 
       } catch (error) {
         console.error('❌ Firebase init failed:', error);
+        updateSyncStatus('📱', 'Local only', false);
       }
 
       // Setup Firebase real-time sync
@@ -2829,6 +2878,7 @@
           if (error.code === 'permission-denied') {
             console.warn('⚠️ Firestore rules not deployed yet');
             firebaseReady = false;
+            updateSyncStatus('⚠️', 'Sync unavailable', false);
           }
         });
       }
@@ -3016,6 +3066,7 @@
                     unsubscribe = null;
                 }
 
+                updateSyncStatus('📱', 'Local only', false);
                 updateSettings();
                 showAlert('Sync disconnected');
             },
