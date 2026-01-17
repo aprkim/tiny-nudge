@@ -1678,7 +1678,7 @@
                         showUserPicker();
                     } else if (attempts > 20) {
                         clearInterval(checkInterval);
-                        showAlert('No data found for this sync code. Please check the code and try again.');
+                        showAlert('Code not found. Check your code and try again.');
                         backToOnboarding();
                     }
                 }, 500);
