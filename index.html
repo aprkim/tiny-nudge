@@ -1130,7 +1130,7 @@
             </div>
             <h1 class="onboarding-title">Tiny Nudge</h1>
             <p class="onboarding-subtitle">Shared tasks for couples. Stay in sync without pressure.</p>
-            <div class="version">v2026.01.17-02:36</div>
+            <div class="version">v2026.01.17-02:38</div>
         </div>
 
         <div class="setup-form">
@@ -2855,11 +2855,18 @@
         unsubscribe = userDoc.onSnapshot((doc) => {
             if (doc.exists) {
                 const remoteData = doc.data();
-
-                console.log('📥 Firebase snapshot received, tasks:', remoteData.tasks?.length || 0);
-
-                // Check if this change came from local (hasPendingWrites) or remote
+                const isFromCache = doc.metadata.fromCache;
                 const isLocalChange = doc.metadata.hasPendingWrites;
+
+                console.log('📥 Firebase snapshot received, tasks:', remoteData.tasks?.length || 0,
+                    'fromCache:', isFromCache, 'hasPendingWrites:', isLocalChange);
+
+                // On first load, skip cached data - wait for server data
+                // This prevents stale cache from overwriting recent local changes
+                if (isFirstLoad && isFromCache) {
+                    console.log('⏳ Skipping cached data on first load, waiting for server...');
+                    return;
+                }
 
                 // Skip server confirmation snapshots that come shortly after our save
                 // This prevents the server confirmation from overwriting our local state
