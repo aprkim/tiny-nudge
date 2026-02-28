@@ -2574,7 +2574,14 @@
                 const dateColor = isApproaching ? 'color: #BF3143;' : '';
                 dueDateHtml = `<span class="task-due-date" style="cursor: pointer; ${dateColor}" onclick="openTaskDateModal(${task.id}, event)">Due ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
             } else if (!task.completed) {
-                dueDateHtml = `<span class="task-due-date" style="cursor: pointer;" onclick="openTaskDateModal(${task.id}, event)">+ Date</span>`;
+                dueDateHtml = `<span class="task-due-date" style="cursor: pointer; display: inline-flex; align-items: center;" onclick="openTaskDateModal(${task.id}, event)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="16" y1="2" x2="16" y2="6" stroke-linecap="round"/>
+                        <line x1="8" y1="2" x2="8" y2="6" stroke-linecap="round"/>
+                        <line x1="3" y1="10" x2="21" y2="10" stroke-linecap="round"/>
+                    </svg>
+                </span>`;
             }
 
             // Auto-detect category based on task text
