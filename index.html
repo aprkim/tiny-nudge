@@ -2107,10 +2107,37 @@
         function closeDateModal() {
             document.getElementById('dateModal').classList.remove('active');
             document.getElementById('dateInputPicker').value = '';
+            state.editingDateTaskId = null;
+        }
+
+        function openTaskDateModal(taskId, event) {
+            event.stopPropagation();
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+            state.editingDateTaskId = taskId;
+            document.getElementById('dateModal').classList.add('active');
+            if (task.due_date) {
+                document.getElementById('dateInputPicker').value = task.due_date;
+            }
         }
 
         function saveDate() {
             const val = document.getElementById('dateInputPicker').value;
+
+            if (state.editingDateTaskId) {
+                // Editing date on an existing task
+                const task = state.tasks.find(t => t.id === state.editingDateTaskId);
+                if (task && val) {
+                    task.due_date = val;
+                    saveState();
+                    renderTasks();
+                    renderFutureTasks();
+                    renderAllTasks();
+                }
+                closeDateModal();
+                return;
+            }
+
             if (val) {
                 const dateObj = new Date(val + 'T12:00:00');
                 const label = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -2131,6 +2158,19 @@
         }
 
         function clearDate() {
+            if (state.editingDateTaskId) {
+                // Clearing date on an existing task
+                const task = state.tasks.find(t => t.id === state.editingDateTaskId);
+                if (task) {
+                    task.due_date = null;
+                    saveState();
+                    renderTasks();
+                    renderFutureTasks();
+                    renderAllTasks();
+                }
+                closeDateModal();
+                return;
+            }
             newTaskDueDate = null;
             document.getElementById('dateLabel').textContent = '';
             document.getElementById('inputDate').classList.remove('active');
@@ -2532,7 +2572,9 @@
                 const daysUntilDue = Math.ceil((dueDateOnly - today) / (1000 * 60 * 60 * 24));
                 const isApproaching = daysUntilDue < 2; // Less than 48 hours (2 days)
                 const dateColor = isApproaching ? 'color: #BF3143;' : '';
-                dueDateHtml = `<span class="task-due-date" style="${dateColor}">Due ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
+                dueDateHtml = `<span class="task-due-date" style="cursor: pointer; ${dateColor}" onclick="openTaskDateModal(${task.id}, event)">Due ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
+            } else if (!task.completed) {
+                dueDateHtml = `<span class="task-due-date" style="cursor: pointer;" onclick="openTaskDateModal(${task.id}, event)">+ Date</span>`;
             }
 
             // Auto-detect category based on task text
