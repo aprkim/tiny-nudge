@@ -2313,6 +2313,8 @@
             task.priority = !task.priority;
             saveState();
             renderTasks();
+            renderFutureTasks();
+            renderAllTasks();
         }
 
         function deleteTask(taskId, event) {
